@@ -6,6 +6,7 @@ class ChatRoom {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 1000;
+        this.isOwner = false;
         
         this.initializeElements();
         this.attachEventListeners();
@@ -48,6 +49,17 @@ class ChatRoom {
         
         // Leave chat
         this.leaveBtn.addEventListener('click', () => this.leaveChat());
+        
+        // Owner authentication - check for special command
+        this.messageInput.addEventListener('input', () => {
+            if (this.messageInput.value.startsWith('/owner ')) {
+                this.messageInput.style.backgroundColor = '#2d1b4d';
+                this.messageInput.style.color = '#e6b800';
+            } else {
+                this.messageInput.style.backgroundColor = '';
+                this.messageInput.style.color = '';
+            }
+        });
         
         // Handle page unload
         window.addEventListener('beforeunload', () => {
@@ -157,6 +169,18 @@ class ChatRoom {
                 data.messages.forEach(msg => this.displayChatMessage(msg));
                 break;
                 
+            case 'owner_status':
+                this.isOwner = data.isOwner;
+                this.showMessage('system', data.message);
+                this.updateOwnerUI();
+                break;
+                
+            case 'owner_data':
+                if (data.command === 'ips') {
+                    this.displayIPData(data.data);
+                }
+                break;
+                
             default:
                 console.warn('Unknown message type:', data.type);
         }
@@ -164,13 +188,13 @@ class ChatRoom {
     
     displayChatMessage(data) {
         const messageElement = document.createElement('div');
-        messageElement.className = 'message chat';
+        messageElement.className = `message chat ${data.isOwner ? 'owner-message' : ''}`;
         
         const timestamp = new Date(data.timestamp).toLocaleTimeString();
         
         messageElement.innerHTML = `
             <div class="message-header">
-                <span class="username">${this.escapeHtml(data.username)}</span>
+                <span class="username ${data.isOwner ? 'owner-badge' : ''}">${this.escapeHtml(data.username)}${data.isOwner ? ' 👑' : ''}</span>
                 <span class="timestamp">${timestamp}</span>
             </div>
             <div class="message-content">${this.escapeHtml(data.content)}</div>
@@ -211,6 +235,47 @@ class ChatRoom {
         if (!this.isConnected || !this.socket) {
             this.showMessage('error', 'Not connected to chat server');
             return;
+        }
+        
+        // Check for owner authentication command
+        if (content.startsWith('/owner ')) {
+            const code = content.substring(7).trim();
+            const authMessage = {
+                type: 'owner_auth',
+                code: code
+            };
+            
+            try {
+                this.socket.send(JSON.stringify(authMessage));
+                this.messageInput.value = '';
+                this.messageInput.style.backgroundColor = '';
+                this.messageInput.style.color = '';
+                this.messageInput.focus();
+            } catch (error) {
+                console.error('Error sending auth:', error);
+                this.showMessage('error', 'Failed to authenticate');
+            }
+            return;
+        }
+        
+        // Check for owner commands (only if authenticated as owner)
+        if (this.isOwner && content.startsWith('/')) {
+            if (content === '/ips') {
+                const commandMessage = {
+                    type: 'owner_command',
+                    command: 'ips'
+                };
+                
+                try {
+                    this.socket.send(JSON.stringify(commandMessage));
+                    this.messageInput.value = '';
+                    this.messageInput.focus();
+                } catch (error) {
+                    console.error('Error sending command:', error);
+                    this.showMessage('error', 'Failed to execute command');
+                }
+                return;
+            }
         }
         
         const message = {
@@ -301,6 +366,46 @@ class ChatRoom {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+    
+    updateOwnerUI() {
+        if (this.isOwner) {
+            // Add owner indicator to status
+            this.statusElement.innerHTML = '<i class="fas fa-crown"></i> Connected as Owner';
+            this.statusElement.className = 'status owner';
+            
+            // Add owner styling to message input
+            this.messageInput.placeholder = 'Type a message... (Owner privileges: /ips)';
+        }
+    }
+    
+    displayIPData(connections) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message owner-data';
+        
+        const timestamp = new Date().toLocaleTimeString();
+        
+        let connectionList = connections.map(conn => 
+            `• ${conn.username} - ${conn.ip} (connected ${conn.connectTime})`
+        ).join('<br>');
+        
+        if (connections.length === 0) {
+            connectionList = 'No active connections found.';
+        }
+        
+        messageElement.innerHTML = `
+            <div class="message-header">
+                <span class="username owner-badge">👑 SYSTEM (Owner Only)</span>
+                <span class="timestamp">${timestamp}</span>
+            </div>
+            <div class="message-content">
+                <strong>Active Connections (${connections.length}):</strong><br>
+                ${connectionList}
+            </div>
+        `;
+        
+        this.messagesContainer.appendChild(messageElement);
+        this.scrollToBottom();
     }
 }
 
