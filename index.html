@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AvoRinks - Real-time Messaging</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="chat-header">
+            <h1><i class="fas fa-comments"></i> AvoRinks</h1>
+            <div class="status-indicator">
+                <span id="status" class="status offline">
+                    <i class="fas fa-circle"></i> Disconnected
+                </span>
+                <span id="user-count" class="user-count">0 users online</span>
+            </div>
+        </header>
+
+        <main class="chat-main">
+            <div id="messages" class="messages-container">
+                <div class="welcome-message">
+                    <i class="fas fa-rocket"></i>
+                    <h2>Welcome to AvoRinks!</h2>
+                    <p>Enter your username below and start chatting with others in real-time.</p>
+                </div>
+            </div>
+
+            <div class="input-section">
+                <div id="username-section" class="username-section">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="username-input" placeholder="Enter your username..." maxlength="20">
+                        <button id="join-btn" class="join-btn">
+                            <i class="fas fa-sign-in-alt"></i> Join Chat
+                        </button>
+                    </div>
+                </div>
+
+                <div id="chat-section" class="chat-section" style="display: none;">
+                    <div class="input-group">
+                        <input type="text" id="message-input" placeholder="Type your message..." maxlength="500">
+                        <button id="send-btn" class="send-btn">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                    <button id="leave-btn" class="leave-btn">
+                        <i class="fas fa-sign-out-alt"></i> Leave Chat
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <footer class="chat-footer">
+            <p>
+                <i class="fas fa-info-circle"></i>
+                Real-time chatroom powered by WebSockets
+                <span id="connection-info"></span>
+            </p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
