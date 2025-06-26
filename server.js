@@ -106,8 +106,8 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start server - Use port 5000 for Replit deployment
-const PORT = process.env.PORT || 5000;
+// Start server - Use PORT environment variable (Render uses 10000 by default)
+const PORT = process.env.PORT || 10000;
 const HOST = '0.0.0.0';
 
 server.listen(PORT, HOST, () => {
